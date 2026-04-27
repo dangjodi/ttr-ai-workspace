@@ -200,14 +200,17 @@ with st.sidebar:
     st.markdown("### Data Status")
     data_path = Path(DATA_DIR) / CLOSED_DEVIATION_FILE
     if data_path.exists():
-    
-    # Clear cache button
-    if st.button("Clear Cache", use_container_width=True):
-        st.cache_data.clear()
-
-    st.markdown("---")
-    
-    st.markdown("### Data Status")
+        df_check = load_data()
+        if df_check is not None:
+            st.success(f"2026 Data Loaded")
+            st.caption(f"{len(df_check):,} records")
+            date_info_sidebar = get_data_date_info(df_check)
+            if date_info_sidebar:
+                st.caption(f"{date_info_sidebar['min_date']} to {date_info_sidebar['max_date']}")
+                st.caption(f"{date_info_sidebar['weeks']} weeks")
+            file_mod = get_file_modified_time()
+            if file_mod:
+                st.caption(f"Updated: {file_mod}")
     data_path = Path(DATA_DIR) / CLOSED_DEVIATION_FILE
     if data_path.exists():
         df_check = load_data()
