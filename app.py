@@ -155,64 +155,51 @@ with st.sidebar:
     # Data Refresh Section
     st.markdown("### Data Refresh")
     
-    # Auto refresh from DataCentral
-    if st.button("🔄 Refresh from DataCentral", use_container_width=True, type="primary"):
-        with st.spinner("Connecting to DataCentral..."):
-            try:
-                from data_refresh import refresh_data
-                result = refresh_data()
-                
-                if result['success']:
-                    st.success(result['message'])
-                    st.session_state.refresh_failed = False
-                    st.cache_data.clear()
-                    st.rerun()
-                else:
-                    st.error(result['message'])
-                    st.session_state.refresh_failed = True
-            except Exception as e:
-                st.error(f"Error: {e}")
-                st.session_state.refresh_failed = True
+    # File uploader - always visible for cloud deployment
+    st.markdown("#### 📁 Upload Data")
+    uploaded_file = st.file_uploader(
+        "Upload CSV", 
+        type=['csv', 'tsv'], 
+        help="Upload your closed deviation CSV file",
+        label_visibility="collapsed"
+    )
     
-    # Manual upload - only show if auto-refresh failed
-    if st.session_state.refresh_failed:
-        st.markdown("---")
-        st.markdown("#### 📁 Manual Upload")
-        st.caption("Auto-refresh failed. Upload CSV manually:")
-        
-        uploaded_file = st.file_uploader(
-            "Upload CSV", 
-            type=['csv', 'tsv'], 
-            help="Download from DataCentral and upload here",
-            label_visibility="collapsed"
-        )
-        
-        if uploaded_file is not None:
-            try:
-                import pandas as pd
-                
-                # Detect separator
-                content = uploaded_file.read().decode('utf-8')
-                sep = '\t' if '\t' in content.split('\n')[0] else ','
-                uploaded_file.seek(0)
-                
-                df_upload = pd.read_csv(uploaded_file, sep=sep)
-                
-                # Filter to APAC
-                site_col = 'site_name' if 'site_name' in df_upload.columns else 'dev_end_site_name'
-                if site_col in df_upload.columns:
-                    df_upload = df_upload[df_upload[site_col].isin(['SIN', 'HND'])]
-                
-                # Save to data folder
-                save_path = Path(DATA_DIR) / CLOSED_DEVIATION_FILE
-                df_upload.to_csv(save_path, index=False)
-                
-                st.success(f"✅ Uploaded {len(df_upload):,} rows")
-                st.session_state.refresh_failed = False
-                st.cache_data.clear()
-                st.rerun()
-            except Exception as e:
-                st.error(f"Upload error: {e}")
+    if uploaded_file is not None:
+        try:
+            # Detect separator
+            content = uploaded_file.read().decode('utf-8')
+            sep = '\t' if '\t' in content.split('\n')[0] else ','
+            uploaded_file.seek(0)
+            
+            df_upload = pd.read_csv(uploaded_file, sep=sep)
+            
+            # Filter to APAC
+            site_col = 'site_name' if 'site_name' in df_upload.columns else 'dev_end_site_name'
+            if site_col in df_upload.columns:
+                df_upload = df_upload[df_upload[site_col].isin(['SIN', 'HND'])]
+            
+            # Save to data folder (create if needed)
+            data_path = Path(DATA_DIR)
+            data_path.mkdir(exist_ok=True)
+            save_path = data_path / CLOSED_DEVIATION_FILE
+            df_upload.to_csv(save_path, index=False)
+            
+            st.success(f"✅ Uploaded {len(df_upload):,} rows")
+            st.cache_data.clear()
+            st.rerun()
+        except Exception as e:
+            st.error(f"Upload error: {e}")
+    
+    # Clear cache button
+    if st.button("Clear Cache", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+    st.markdown("---")
+    
+    st.markdown("### Data Status")
+    data_path = Path(DATA_DIR) / CLOSED_DEVIATION_FILE
+    if data_path.exists():
     
     # Clear cache button
     if st.button("Clear Cache", use_container_width=True):
