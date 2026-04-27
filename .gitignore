@@ -1,0 +1,19 @@
+# Data files - keep off GitHub
+data/
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.venv/
+
+# Backup files
+*.backup
+*_backup.py
+
+# OS files
+.DS_Store
+Thumbs.db
